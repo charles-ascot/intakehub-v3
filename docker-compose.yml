@@ -1,0 +1,82 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: intakehub-postgres
+    environment:
+      POSTGRES_USER: intakehub
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: intakehub
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U intakehub"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - intakehub
+
+  redis:
+    image: redis:7-alpine
+    container_name: intakehub-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - intakehub
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: intakehub-backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://intakehub:password@postgres:5432/intakehub
+      REDIS_URL: redis://redis:6379
+      STORAGE_BACKEND: local
+      LOCAL_STORAGE_PATH: /app/data/storage
+      ENVIRONMENT: development
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/data:/app/data
+    networks:
+      - intakehub
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: intakehub-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:8000
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+    networks:
+      - intakehub
+    command: npm run dev -- --host 0.0.0.0
+
+volumes:
+  postgres_data:
+
+networks:
+  intakehub:
+    driver: bridge

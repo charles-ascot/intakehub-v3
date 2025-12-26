@@ -1,0 +1,12 @@
+[tool.poetry]
+name = "intakehub"
+version = "3.0.0"
+description = "Vendor-agnostic data intake platform for Project CHIMERA"
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+
+[tool.pytest.ini_options]
+testpaths = ["src/tests"]
+asyncio_mode = "auto"
