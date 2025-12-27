@@ -6,6 +6,8 @@ import logging
 
 from src.config import settings
 from src.database.connection import init_db
+from src.routes import providers  # ADD THIS
+from src.storage.factory import init_storage  # ADD THIS
 
 logging.basicConfig(level=settings.log_level)
 logger = logging.getLogger(__name__)
@@ -16,6 +18,7 @@ async def lifespan(app: FastAPI):
         logger.info("🚀 Initializing IntakeHub backend...")
         await init_db()
         logger.info("✅ Database initialized")
+        init_storage()
         logger.info(f"📦 Storage backend: {settings.storage_backend}")
         yield
     finally:
@@ -35,6 +38,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# REGISTER ROUTES
+app.include_router(providers.router)
 
 @app.get("/")
 async def root():

@@ -19,6 +19,15 @@ class Provider(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+class Credential(Base):
+    __tablename__ = "credentials"
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    provider_id = Column(String(36), nullable=False)
+    credential_type = Column(String(50), nullable=False)  # e.g., "api_key", "username_password"
+    encrypted_data = Column(Text, nullable=False)  # JSON encrypted
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
 class HealthCheck(Base):
     __tablename__ = "health_checks"
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
